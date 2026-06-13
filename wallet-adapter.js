@@ -101,29 +101,65 @@ const getAllAvailableWallets = () => {
 };
 
 /**
- * Connect to wallet
+ * Connect to wallet - FIXED VERSION
  */
 const connectToWallet = async (provider) => {
     console.log('[WALLET] Attempting to connect...');
     
+    if (!provider) {
+        throw new Error('No wallet provider available');
+    }
+
     try {
-        // Try to connect
+        // Check if already connected
         if (provider.isConnected) {
             console.log('[WALLET] Already connected');
+            if (provider.publicKey) {
+                return provider.publicKey;
+            }
+        }
+        
+        // Attempt to connect
+        console.log('[WALLET] Requesting user connection...');
+        
+        // For Phantom and most wallets
+        if (provider.connect) {
+            try {
+                // Phantom returns { publicKey }
+                const result = await provider.connect({ onlyIfTrusted: false });
+                console.log('[WALLET] Connect result:', result);
+                
+                if (result && result.publicKey) {
+                    console.log('[WALLET] Got publicKey from connect result');
+                    return result.publicKey;
+                }
+            } catch (connectError) {
+                console.error('[WALLET] Connect method error:', connectError);
+                
+                // If connect fails, check if publicKey is now available
+                if (provider.publicKey) {
+                    console.log('[WALLET] Using publicKey from provider');
+                    return provider.publicKey;
+                }
+                throw connectError;
+            }
+        }
+        
+        // Fallback: check if publicKey is available after interaction
+        if (provider.publicKey) {
+            console.log('[WALLET] Using publicKey from provider after interaction');
             return provider.publicKey;
         }
         
-        // Request connection
-        const response = await provider.connect();
-        console.log('[WALLET] Connection successful');
-        return response.publicKey;
+        throw new Error('Failed to get public key from wallet');
         
     } catch (error) {
         console.error('[WALLET] Connection error:', error);
         
-        if (error.code === 4001) {
+        if (error.code === 4001 || error.message?.includes('rejected')) {
             throw new Error('User rejected wallet connection');
         }
+        
         throw new Error(`Failed to connect to wallet: ${error.message}`);
     }
 };
